@@ -1,0 +1,328 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>X.O Game</title>
+    <style>
+        body {
+            background-color: #f8f8ff;
+            color: #333;
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+            background-color: #e6e6fa;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            background-color: #483d8b;
+            color: #fff;
+            padding: 20px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        .main-content {
+            padding: 20px;
+        }
+
+        .footer {
+            background-color: #483d8b;
+            color: #fff;
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+        }
+
+        #game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background-color: #d8bfd8;
+            border: 1px solid #800080;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            border-radius: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .cell:hover {
+            background-color: #ba55d3;
+        }
+
+        .score {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        .reset-button {
+            margin-top: 10px;
+            background-color: #6a5acd;
+            color: #fff;
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .reset-button:hover {
+            background-color: #483d8b;
+        }
+
+        .draw-button {
+            background-color: #ff0000;
+            color: #fff;
+            padding: 12px 20px;
+            cursor: pointer;
+            border: none;
+            font-size: 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+
+        .draw-button:hover {
+            background-color: #b30000;
+        }
+
+        #player-names {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+            font-size: 18px;
+        }
+
+        #playerX,
+        #playerO {
+            margin-bottom: 10px;
+        }
+
+        #start-message {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 20px;
+        }
+
+        #congrats-message {
+            font-size: 24px;
+            font-weight: bold;
+            color: green;
+            margin-top: 20px;
+            display: none;
+        }
+
+        @media screen and (max-width: 600px) {
+            .cell {
+                width: 80px;
+                height: 80px;
+                font-size: 20px;
+            }
+            .reset-button {
+                padding: 10px 15px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>X.O Game</h1>
+        </header>
+
+        <div class="main-content">
+            <div id="player-names">
+                <div id="playerX">Player X: <input type="text" id="nameX" placeholder="Enter name for Player X"></div>
+                <div id="playerO">Player O: <input type="text" id="nameO" placeholder="Enter name for Player O"></div>
+            </div>
+            <div class="score">
+                <span id="scoreX">Score X: 0</span>
+                <span id="draw">Draw: 0</span>
+                <span id="scoreO">Score O: 0</span>
+            </div>
+            <div id="game-board"></div>
+            <div id="result-message"></div>
+            <div id="start-message"></div>
+            <div id="congrats-message"></div>
+            <button onclick="startGame()" class="reset-button">Start New Game</button>
+            <button onclick="resetScore()" class="reset-button">Reset Score</button>
+            <button onclick="resetGame()" class="reset-button">Reset Game</button>
+            <button onclick="declareDraw()" class="draw-button">Declare Draw</button>
+        </div>
+
+        <footer class="footer">
+            <p>Created with love by <strong>Fatima Hassan</strong></p>
+        </footer>
+    </div>
+
+    <script>
+        let currentPlayer;
+        let gameBoard;
+        let gameOver;
+        let scoreX = 0;
+        let scoreO = 0;
+        let draw = 0;
+        let nameX;
+        let nameO;
+
+        const cells = document.getElementById('game-board');
+        const resultMessage = document.getElementById('result-message');
+        const startMessage = document.getElementById('start-message');
+        const congratsMessage = document.getElementById('congrats-message');
+        const nameXElement = document.getElementById('nameX');
+        const nameOElement = document.getElementById('nameO');
+        const scoreXElement = document.getElementById('scoreX');
+        const scoreOElement = document.getElementById('scoreO');
+        const drawElement = document.getElementById('draw');
+
+        function startGame() {
+            nameX = nameXElement.value || 'X';
+            nameO = nameOElement.value || 'O';
+
+            currentPlayer = Math.random() < 0.5 ? 'X' : 'O';
+            gameBoard = Array(9).fill('');
+            gameOver = false;
+
+            startMessage.textContent = `Starting game. ${getCurrentPlayerName()} goes first.`;
+            startMessage.style.display = 'block';
+            setTimeout(() => {
+                startMessage.style.display = 'none';
+            }, 2000);
+
+            resultMessage.textContent = '';
+            updateBoard();
+        }
+
+        function updateBoard() {
+            cells.innerHTML = '';
+            gameBoard.forEach((cell, index) => {
+                const cellElement = document.createElement('div');
+                cellElement.className = 'cell';
+                cellElement.textContent = cell;
+                cellElement.addEventListener('click', () => handleCellClick(index));
+                cells.appendChild(cellElement);
+            });
+            updatePlayerNames();
+        }
+
+        function handleCellClick(index) {
+            if (!gameOver && gameBoard[index] === '') {
+                gameBoard[index] = currentPlayer;
+                updateBoard();
+                if (checkWin()) {
+                    resultMessage.textContent = `${getCurrentPlayerName()} wins!`;
+                    updateScore();
+                    showCongratsMessage();
+                    gameOver = true;
+                } else if (gameBoard.every(cell => cell !== '')) {
+                    resultMessage.innerHTML = `<span style="color:red; font-weight:bold;">It's a draw!</span>`;
+                    draw += 1;
+                    drawElement.textContent = `Draw: ${draw}`;
+                    showCongratsMessage();
+                    gameOver = true;
+                } else {
+                    currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+                }
+            }
+        }
+
+        function checkWin() {
+            const winPatterns = [
+                [0, 1, 2],
+                [3, 4, 5],
+                [6, 7, 8],
+                [0, 3, 6],
+                [1, 4, 7],
+                [2, 5, 8],
+                [0, 4, 8],
+                [2, 4, 6],
+            ];
+
+            return winPatterns.some(pattern =>
+                pattern.every(index => gameBoard[index] === currentPlayer)
+            );
+        }
+
+        function updateScore() {
+            if (currentPlayer === 'X') {
+                scoreX += 1;
+            } else {
+                scoreO += 1;
+            }
+            updatePlayerNames();
+            scoreXElement.textContent = `Score X: ${scoreX}`;
+            scoreOElement.textContent = `Score O: ${scoreO}`;
+        }
+
+        function resetScore() {
+            scoreX = 0;
+            scoreO = 0;
+            draw = 0;
+            updatePlayerNames();
+            updateScore();
+            startGame();
+        }
+
+        function resetGame() {
+            nameXElement.value = '';
+            nameOElement.value = '';
+            scoreX = 0;
+            scoreO = 0;
+            draw = 0;
+            updatePlayerNames();
+            updateScore();
+            startGame();
+        }
+
+        function getCurrentPlayerName() {
+            return currentPlayer === 'X' ? nameX : nameO;
+        }
+
+        function updatePlayerNames() {
+            nameXElement.value = nameX;
+            nameOElement.value = nameO;
+        }
+
+        function showCongratsMessage() {
+            congratsMessage.textContent = `${getCurrentPlayerName()} wins! Congratulations!`;
+            congratsMessage.style.display = 'block';
+            setTimeout(() => {
+                congratsMessage.style.display = 'none';
+            }, 3000);
+        }
+
+        function declareDraw() {
+            resultMessage.innerHTML = `<span style="color:red; font-weight:bold;">It's a draw!</span>`;
+            draw += 1;
+            drawElement.textContent = `Draw: ${draw}`;
+            showCongratsMessage();
+            gameOver = true;
+        }
+
+        startGame();
+    </script>
+</body>
+
+</html>
